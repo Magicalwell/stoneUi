@@ -1,7 +1,8 @@
 <template>
   <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png" />
-    <st-todolist></st-todolist>
+    <div class="test-box">
+      <st-todolist></st-todolist>
+    </div>
   </div>
 </template>
 
@@ -16,8 +17,12 @@ export default {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-align: center;
   color: #2c3e50;
   margin-top: 60px;
+  .test-box {
+    width: 500px;
+    height: 700px;
+    border: 1px solid #999;
+  }
 }
 </style>
