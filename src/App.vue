@@ -1,6 +1,8 @@
 <template>
   <div id="app">
     <div class="test-box">
+      <button v-debounce="[testdebounced]"></button>
+      <input type="text" v-throttle="[inputest, 'input', 1000]" />
       <st-todolist></st-todolist>
     </div>
   </div>
@@ -9,6 +11,14 @@
 <script>
 export default {
   name: "App",
+  methods: {
+    testdebounced() {
+      console.log(1111111111);
+    },
+    inputest() {
+      console.log(999);
+    },
+  },
 };
 </script>
 
