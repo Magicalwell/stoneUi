@@ -18,7 +18,6 @@ const debounce = function (fn, wait, defer = false) {
 export default {
   name: "debounce",
   inserted: function (el, binding) {
-    console.log(binding.value[0]);
     let [fn, event = "click", time = 300, defer = false] = binding.value;
     el.addEventListener(event, debounce(fn, time, defer));
   },
