@@ -12,7 +12,9 @@
       </button>
       <input type="text" v-throttle="[inputest, 'input', 1000]" />
       <st-todolist></st-todolist>
-      <div class="test" id="test">909909321</div>
+      <div class="test" id="test" v-vue-sticky="{ container: '#app' }">
+        909909321
+      </div>
       <img
         v-lazy-img="{
           url: 'https://p1-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/ed44c6756d7b4c4989e9623baad731b9~tplv-k3u1fbpfcp-image.image',
