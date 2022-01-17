@@ -40,10 +40,16 @@
 <script>
 export default {
   name: "App",
+  data() {
+    return {
+      obj1: { a: 1, b: { c: 2 } },
+      obj2: { b: { c: [5] } },
+    };
+  },
   methods: {
     testdebounced() {
       console.log(1111111111);
-      console.log(this.$refs.testbottom);
+      console.log(this.$stMethods.extend(true, this.obj1, this.obj2));
     },
     inputest() {
       console.log(999);
