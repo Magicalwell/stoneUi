@@ -12,8 +12,21 @@
       </button>
       <input type="text" v-throttle="[inputest, 'input', 1000]" />
       <st-todolist></st-todolist>
-      <div class="test" id="test" v-vue-sticky="{ container: '#app' }">
-        909909321
+      <div class="test" id="test222">909909321</div>
+      <div class="test" id="test">909909321</div>
+      <div class="test" id="test">909909321</div>
+      <div class="test" id="test">909909321</div>
+      <div class="test" id="test">909909321</div>
+      <div class="test" id="test">909909321</div>
+      <div class="test" id="test">909909321</div>
+      <div class="test" id="test">909909321</div>
+      <div class="test" id="test">909909321</div>
+      <div
+        class="test2"
+        id="test2"
+        v-vue-sticky="{ container: '#app', stickyTop: 150 }"
+      >
+        测试测试
       </div>
       <img
         v-lazy-img="{
@@ -27,7 +40,7 @@
       <div
         v-scroll-to="{
           container: '#app',
-          el: '#test',
+          el: '#test222',
           direction: 'y',
           during: 300,
           node: $refs.testbottom,
@@ -52,6 +65,9 @@ export default {
     testdebounced() {
       console.log(1111111111);
       console.log(this.$stMethods.extend(true, this.obj1, this.obj2));
+      console.log(
+        this.$stMethods.flatten([1, 2, [5, 6, 7, [9, 10]]], false, false)
+      );
     },
     inputest() {
       console.log(999);
