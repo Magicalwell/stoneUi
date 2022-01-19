@@ -1,11 +1,14 @@
 import Directives from "./directives/index";
 import stMethods from "./utils/stMethods";
-const install = function (Vue) {
+import globelFliter from "./fliter";
+const install = function (Vue, { store }) {
+  console.log(store);
   const components = require.context("./components", true, /index.js/);
   components.keys().forEach((element) => {
     Vue.use(components(element).default);
   });
   Vue.use(Directives);
+  Vue.use(globelFliter, store.state);
   // const methodsList = require.context("./utils", true, /.js$/);
   // // console.log(methodsList.resolve(methodsList.keys()[0]));
   // methodsList.keys().forEach((element) => {

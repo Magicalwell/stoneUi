@@ -48,6 +48,7 @@
       >
         test
       </div>
+      <div>{{ 2 | channelFilter }}</div>
     </div>
   </div>
 </template>
