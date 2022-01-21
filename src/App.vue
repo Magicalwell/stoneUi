@@ -37,6 +37,8 @@
         style="width: 100px; height: 100px; margin-top: 600px"
       />
       <hr />
+      <st-dialog :visiable.sync="dialogStatus"></st-dialog>
+      <button @click="dialogStatus = true">显示弹窗</button>
       <div
         v-scroll-to="{
           container: '#app',
@@ -60,6 +62,7 @@ export default {
     return {
       obj1: { a: 1, b: { c: 2 } },
       obj2: { b: { c: [5] } },
+      dialogStatus: false,
     };
   },
   methods: {
