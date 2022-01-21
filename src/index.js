@@ -16,7 +16,7 @@ const install = function (Vue, { store }) {
   //   console.log(methodsList(element).default);
   //   // Vue.prototype[key] = value;
   // });
-  // 目前暂无太多方法，直接import
+  // 目前暂无太多utils，直接import
   const globalMethods = new Map([["$stMethods", stMethods]]);
   for (let [key, value] of globalMethods.entries()) {
     Vue.prototype[key] = value; //绑定公共方法到vue原型

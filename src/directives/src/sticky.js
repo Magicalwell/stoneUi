@@ -48,7 +48,7 @@ const vueSticky = {
     };
 
     const reset = () => {
-      console.log("重置");
+      // console.log("重置");
       if (!active) {
         return;
       }
@@ -60,12 +60,12 @@ const vueSticky = {
     const check = () => {
       const scrollTop = getScroll(container, true);
       const offsetTop = el.getBoundingClientRect().top;
-      console.log(offsetTop);
+      // console.log(offsetTop);
       if (offsetTop < stickyTop) {
-        console.log(999);
+        // console.log(999);
         sticky();
       } else {
-        console.log(scrollTop, elHeight, stickyTop, elTop);
+        // console.log(scrollTop, elHeight, stickyTop, elTop);
         if (scrollTop + stickyTop < elTop) {
           reset();
         }
