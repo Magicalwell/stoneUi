@@ -37,7 +37,22 @@
         style="width: 100px; height: 100px; margin-top: 600px"
       />
       <hr />
-      <st-dialog :visiable.sync="dialogStatus"></st-dialog>
+      <st-dialog :visiable.sync="dialogStatus">
+        <div>测试弹框插槽</div>
+        <div slot="footer" class="footer-btns">
+          <button class="st-button" @click="dialogStatus2 = !dialogStatus2">
+            确认
+          </button>
+          <button class="st-button">取消</button>
+        </div>
+      </st-dialog>
+      <st-dialog :visiable.sync="dialogStatus2" :width="600">
+        <div>测试弹框插槽2</div>
+        <div slot="footer" class="footer-btns">
+          <button class="st-button">确认</button>
+          <button class="st-button">取消</button>
+        </div>
+      </st-dialog>
       <button @click="dialogStatus = true">显示弹窗</button>
       <div
         v-scroll-to="{
@@ -63,6 +78,7 @@ export default {
       obj1: { a: 1, b: { c: 2 } },
       obj2: { b: { c: [5] } },
       dialogStatus: false,
+      dialogStatus2: false,
     };
   },
   methods: {
@@ -102,6 +118,23 @@ export default {
     height: 1200px;
     border: 1px solid #999;
     overflow: auto;
+  }
+}
+.st-button {
+  display: inline-block;
+  white-space: nowrap;
+  padding: 10px 20px;
+  font-size: 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  background: #fff;
+  outline: 0;
+  border: 1px solid #dcdfe6;
+  margin-left: 10px;
+  .small {
+    padding: 9px 15px;
+    font-size: 12px;
+    border-radius: 3px;
   }
 }
 </style>

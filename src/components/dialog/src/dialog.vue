@@ -13,24 +13,22 @@
         title="白底弹框盒子"
         :style="{
           transform: `translate3d(${postionX}px, ${postionY}px, 0) scale(0)`,
+          width: `${width}px`,
         }"
       >
         <header style="padding: 15px 15px 10px; position: relative">
           <h2 style="font-weight: 400; font-size: 18px">{{ title }}</h2>
-          <button class="header-close-btn">
+          <button class="header-close-btn" @click="closeDialog">
             <i class="icon-close">×</i>
           </button>
         </header>
         <div class="dialog-body" style="padding: 10px 15px">
-          {{ text }}
           <slot></slot>
         </div>
         <footer style="padding: 5px 15px 0; text-align: right">
-          <slot name="footer"></slot>
-          <template>
-            <button class="st-botton">确认</button>
-            <button class="st-botton">取消</button>
-          </template>
+          <div>
+            <slot name="footer"></slot>
+          </div>
         </footer>
       </div>
     </div>
@@ -39,6 +37,7 @@
 
 <script>
 let zIndex = 1000;
+let keyId = 1;
 export default {
   name: "StDialog",
   props: {
@@ -50,14 +49,16 @@ export default {
       type: String,
       default: "提示",
     },
-    text: {
-      type: String,
-      default: "确定要关闭吗?",
+    beforeClose: Function,
+    width: {
+      type: Number,
+      default: 420,
     },
   },
   data() {
     return {
       zIndex: zIndex,
+      keyId: keyId,
       postionX: "",
       postionY: "",
       dialogVisible: false,
@@ -65,6 +66,7 @@ export default {
   },
   created() {
     zIndex++;
+    keyId++;
   },
   mounted() {
     document.addEventListener("click", this.setContentPosition);
@@ -78,21 +80,24 @@ export default {
     },
   },
   methods: {
+    closeDialog() {
+      this.dialogClose();
+    },
     dialogClose() {
       this.dialogVisible = false;
       this.$emit("update:visiable", this.dialogVisible);
     },
     setContentPosition(e) {
-      console.log(this.$el.contains(e.target));
-      if (this.visiable || this.$el.contains(e.target)) return;
+      if (!this.visiable || this.$el.contains(e.target)) return;
       //   console.log(this.value, this.contentShow, this.$el, e.target);
-      const { clientWidth, clientHeight } = this.$el;
+      // const { clientWidth, clientHeight } = this.$el; document.documentElement.clientWidth || document.body.clientWidth
+      const { clientWidth, clientHeight } = document.documentElement;
       console.log(this.$el.clientWidth);
       const centerX = clientWidth / 2;
       const centerY = clientHeight / 2;
       const pageY = e.clientY - centerY;
       const pageX = e.clientX - centerX;
-      console.log(pageY);
+      // console.log(pageY);
       //   this.postionX = `${(pageX / clientWidth) * 100}vw`;
       //   this.postionY = `${(pageY / clientHeight) * 100}vh`;
       this.postionX = pageX;
@@ -159,23 +164,6 @@ export default {
     height: 100%;
     font-size: 20px;
     width: 20px;
-  }
-}
-.st-botton {
-  display: inline-block;
-  white-space: nowrap;
-  padding: 10px 20px;
-  font-size: 14px;
-  border-radius: 4px;
-  cursor: pointer;
-  background: #fff;
-  outline: 0;
-  border: 1px solid #dcdfe6;
-  margin-left: 10px;
-  .small {
-    padding: 9px 15px;
-    font-size: 12px;
-    border-radius: 3px;
   }
 }
 </style>
