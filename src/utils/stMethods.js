@@ -178,6 +178,7 @@ const methods = {
     // 更复杂的对象使用 deepEq 函数进行深度比较
     return this.deepEq(a, b, aStack, bStack);
   },
+  // 深度对比
   deepEq(a, b, aStack, bStack) {
     // a 和 b 的内部属性 [[class]] 相同时 返回 true
     var className = Object.prototype.toString.call(a);
@@ -297,6 +298,18 @@ const methods = {
     // * shallow true + strict true ：去掉非数组元素
     // * shallow false + strict true ： 返回一个[]
     return output;
+  },
+  // 树结构扁平化数组
+  treeToArray(tree) {
+    var res = [];
+    for (const item of tree) {
+      const { children, ...i } = item;
+      if (children && children.length) {
+        res = res.concat(this.treeToArray(children));
+      }
+      res.push(i);
+    }
+    return res;
   },
 };
 
