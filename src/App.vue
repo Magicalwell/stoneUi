@@ -1,30 +1,32 @@
 <template>
-  <HelloWorld msg="Welcome to Your Vue.js + TypeScript App"/>
-  <STInfiniteScroll>
-    <ul>
-      <li>1</li>
-      <li>2</li>
-      <li>3</li>
-      <li>4</li>
-      <li>5</li>
-      <li>6</li>
-      <li>7</li>
-      <li>8</li>
-      <li>9</li>
-      <li>10</li>
-    </ul>
+  <HelloWorld msg="Welcome to Your Vue.js + TypeScript App" />
+  <STInfiniteScroll
+    :data="data"
+    :width="'100%'"
+    :height="500"
+    :itemSize="50"
+    v-slot="{ item }"
+  >
+    <div>{{ item.title }}</div>
   </STInfiniteScroll>
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
-import HelloWorld from './components/HelloWorld.vue';
+import { defineComponent } from "vue";
+import HelloWorld from "./components/HelloWorld.vue";
+import CommonService from "./infinite-scroll/src/common.service";
 
 export default defineComponent({
-  name: 'App',
+  name: "App",
   components: {
-    HelloWorld
-  }
+    HelloWorld,
+  },
+  setup() {
+    const data = CommonService.generateData(100);
+    return {
+      data,
+    };
+  },
 });
 </script>
 
