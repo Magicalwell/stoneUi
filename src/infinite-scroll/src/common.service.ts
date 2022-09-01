@@ -7,7 +7,7 @@ const CommonService = {
     const length = CommonService.random(min, max);
 
     for (let i: number = 0; i < length; i++) {
-      data.push({ title: i, msg: "hello wrold" });
+      data.push({ title: i, msg: "hello wroldWelcome to Your Vue.js + TypeScript AppWelcome to Your Vue.js + TypeScript AppWelcome to Your Vue.js + TypeScript AppWelcome to Your Vue.js + TypeScript AppWelcome to Your Vue.js + TypeScript AppWelcome to Your Vue.js + TypeScript AppWelcome to Your Vue.js + TypeScript AppWelcome to Your Vue.js + TypeScript AppWelcome to Your Vue.js + TypeScript AppWelcome to Your Vue.js + TypeScript AppWelcome to Your Vue.js + TypeScript AppWelcome to Your Vue.js + TypeScript AppWelcome to Your Vue.js + TypeScript App" });
     }
     return data;
   },

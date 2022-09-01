@@ -2,6 +2,8 @@ type itemSizeGetter = (index: number) => number;
 interface SizeAndPosition {
   size: number;
   offset: number;
+  top?: number;
+  bottom?: number;
 }
 interface options {
   itemCount: number;
@@ -14,7 +16,7 @@ interface SizeAndPositionData {
 export class SizeAndPosManager {
   private itemSizeGetter: itemSizeGetter;
   private itemCount: number; // 元素数量
-  private estimatedItemSize: number; // 单个元素的尺寸
+  private estimatedItemSize: number; // 单个元素的预估尺寸，在没有给的情况下默认等于itemSize尺寸
   private lastMeasuredIndex: number; // 视图的最后一个元素的index
   private itemSizeAndPositionData: SizeAndPositionData; // 单个元素的位置和尺寸信息，用于处理列表项的高度不是统一的情况
   constructor({ itemCount, itemSizeGetter, estimatedItemSize }: options) {
@@ -22,7 +24,7 @@ export class SizeAndPosManager {
     this.itemCount = itemCount;
     this.estimatedItemSize = estimatedItemSize;
     this.lastMeasuredIndex = -1;
-    this.itemSizeAndPositionData = {};
+    this.itemSizeAndPositionData = {}; // 保存每个item的size和位置信息
   }
   binarySearch({
     low,
@@ -35,7 +37,7 @@ export class SizeAndPosManager {
   }) {
     let middle = 0;
     let currentOffset = 0;
-    // 这里是分段进行加载
+    // 这里是二分法进行加载
     while (low <= high) {
       middle = low + Math.floor((high - low) / 2);
       currentOffset = this.getSizeAndPositionForIndex(middle).offset;
@@ -84,8 +86,8 @@ export class SizeAndPosManager {
         this.itemSizeAndPositionData[i] = {
           offset,
           size,
+          top: offset,
         };
-
         offset += size;
       }
 
@@ -126,7 +128,6 @@ export class SizeAndPosManager {
     }
     const maxOffset = offset + containerSize;
     let start = this.findNearestItem(offset);
-    console.log(start, "/////////////////////////////");
 
     const datum = this.getSizeAndPositionForIndex(start);
     offset = datum.offset + datum.size;

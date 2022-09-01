@@ -1,19 +1,39 @@
 <template>
   <div ref="rootNode" :style="warpStyle">
-    <div ref="innerNode" :style="innerStyle">
+    <div ref="innerNode" :style="innerStyle" v-if="!modelFlag">
       <div
         v-for="(item, i) in event?.items"
         :key="i"
         :style="getItemStyle(i)"
         class="vue3-infinite-list"
+        ref="items"
       >
-        <slot :event="event" :item="item" :index="i"></slot>
+        <slot :event="event" :item="item.item" :index="i"></slot>
+      </div>
+    </div>
+    <div v-else class="actualContent" :style="innerStyle">
+      <div
+        v-for="(item, i) in event?.items"
+        :key="i"
+        class="vue3-infinite-list"
+        ref="items"
+      >
+        <slot :event="event" :item="item.item" :index="i"></slot>
       </div>
     </div>
   </div>
 </template>
 <script lang="ts">
-import { defineComponent, ref, onMounted, toRefs, reactive } from "vue";
+import {
+  defineComponent,
+  ref,
+  onMounted,
+  onUpdated,
+  toRefs,
+  reactive,
+  computed,
+  watch,
+} from "vue";
 import { addEventListener } from "../../utils";
 import { SizeAndPosManager } from "./SizeAndPosManager";
 import {
@@ -22,6 +42,7 @@ import {
   positionProp,
   STYLE_WRAPPER,
   STYLE_INNER,
+  STYLE_INNER_FLEX,
   STYLE_ITEM,
   scrollProp,
   sizeProp,
@@ -48,22 +69,28 @@ export default defineComponent({
       default: [],
       required: true,
     },
-    // itemsize考虑后续不传，通过计算得到
+    // itemsize为单条的高度考虑后续存在不同高度的item，这个就不传了通过计算得到
+    // 也可以保留用作固定高度时候的高效渲染
     itemSize: {
       type: null,
       required: true,
     },
+    // 滚动方向
     scrollDirection: {
       type: String,
       default: DIRECTION_VERTICAL,
     },
+    // 预估渲染 传入该值则开始自适应高度的模式，但性能不好
     estimatedItemSize: {
       type: Number || null,
+      default: null,
     },
+    // 缓冲区大小
     overscanCount: {
       type: Number,
       default: 4,
     },
+    // 视口的高度
     height: {
       type: [Number, String],
     },
@@ -74,13 +101,27 @@ export default defineComponent({
     let innerNode = ref(null);
     let warpStyle = ref(null);
     let innerStyle = ref(null);
+    let items = ref(null);
 
     let offset: number;
     let styleCache: StyleCache = {};
-    let visableItems: any[] = reactive([]);
-    let sizeAndPosManager: SizeAndPosManager;
+    let visableItems: any[] = reactive([]); // 显示的元素
+    let sizeAndPosManager: SizeAndPosManager; // 位置管理模块
+    let _positionData = computed(() => {
+      return props.data.map((item, index) => {
+        return {
+          item,
+          _id: index,
+        };
+      });
+    }); // 存放处理后的数据，需要跟之前的隔离以免影响到
+    // 为true则是自适应模式
+    let modelFlag = computed(
+      () =>
+        typeof props.estimatedItemSize === "number" &&
+        props.estimatedItemSize >= 0
+    );
     const event = reactive({} as any);
-
     const { itemSize, scrollDirection } = toRefs(props);
     const getCurrSizeProp = () => {
       return sizeProp[scrollDirection.value];
@@ -141,17 +182,19 @@ export default defineComponent({
         return;
 
       offset = nodeOffset;
+
       scrollRender();
     };
     const setDomStyle = () => {
+      // 常规定高模式下，内部相对定位，通过计算给出总高以模拟出滚动条，当发生滚动的时候，内部盒子正常滚动，只不过程序控制的是里面绝对定位item的渲染
       warpStyle.value = {
         ...STYLE_WRAPPER,
         height: props.height + "px",
         width: props.width,
       };
-
+      // 自适应高度的情况下，innerStyle应该为绝对定位，内部子元素相对定位，并高度自由撑开，给定的预估高度为min-height
       innerStyle.value = {
-        ...STYLE_INNER,
+        ...(modelFlag ? STYLE_INNER_FLEX : STYLE_INNER),
         [getCurrSizeProp()]: sizeAndPosManager.getTotalSize() + "px",
       };
     };
@@ -175,16 +218,12 @@ export default defineComponent({
         offset: offset || 0,
         overscanCount: props.overscanCount,
       });
-      console.log(start, stop);
       if (typeof start !== "undefined" && typeof stop !== "undefined") {
         visableItems.length = 0;
 
         for (let i = start; i <= stop; i++) {
-          console.log(props.data[i]);
-
-          visableItems.push(props.data[i]);
+          visableItems.push(_positionData.value[i]);
         }
-        console.log(visableItems);
 
         event.start = start;
         event.stop = stop;
@@ -201,7 +240,37 @@ export default defineComponent({
       }
     };
     onMounted(() => setTimeout(initScroll));
-    return { rootNode, innerNode, warpStyle, innerStyle, event, getItemStyle };
+    onUpdated(() => {
+      console.log(items.value);
+      (items.value as any).forEach((element: HTMLElement) => {
+        let rect = element.getBoundingClientRect();
+        console.log(rect.height);
+        
+      });
+    });
+    // watch(
+    //   () => props.data,
+    //   (newVal, oldVal) => {
+    //     sizeAndPosManager.updateConfig({
+    //       itemCount: getItemCount(),
+    //       estimatedItemSize: getEstimatedItemSize(),
+    //     });
+    //     oldOffset = null;
+    //     recomputeSizes();
+    //     setDomStyle();
+    //     setTimeout(scrollRender, 0);
+    //   }
+    // );
+    return {
+      rootNode,
+      innerNode,
+      warpStyle,
+      innerStyle,
+      event,
+      getItemStyle,
+      items,
+      modelFlag,
+    };
   },
 });
 </script>

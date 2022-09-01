@@ -19,7 +19,7 @@ export const scrollProp = {
   [DIRECTION_HORIZONTAL]: "scrollLeft",
 };
 
-export const sizeProp : sizeTypeProp = {
+export const sizeProp: sizeTypeProp = {
   [DIRECTION_VERTICAL]: "height",
   [DIRECTION_HORIZONTAL]: "width",
 };
@@ -47,4 +47,13 @@ export const STYLE_ITEM: any = {
   left: 0,
   width: "100%",
   height: "100%",
+};
+export const STYLE_INNER_FLEX: any = {
+  position: "absolute",
+  left: 0,
+  width: "100%",
+  height: "100%",
+};
+export const STYLE_ITEM_FLEX: any = {
+  width: "100%",
 };

@@ -7,7 +7,7 @@
     :itemSize="50"
     v-slot="{ item }"
   >
-    <div>{{ item.title }}</div>
+    <div>{{ item.title}}</div>
   </STInfiniteScroll>
 </template>
 
@@ -22,7 +22,7 @@ export default defineComponent({
     HelloWorld,
   },
   setup() {
-    const data = CommonService.generateData(100);
+    const data = CommonService.generateData(1000);
     return {
       data,
     };
