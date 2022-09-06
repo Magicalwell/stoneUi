@@ -11,10 +11,11 @@
         <slot :event="event" :item="item.item" :index="i"></slot>
       </div>
     </div>
-    <div v-else class="actualContent" :style="innerStyle">
+    <div v-else class="actualContent" :style="innerStyle" ref="innerNode">
       <div
         v-for="(item, i) in event?.items"
         :key="i"
+        :id="'item-' + i"
         class="vue3-infinite-list"
         ref="items"
       >
@@ -36,6 +37,7 @@ import {
 } from "vue";
 import { addEventListener } from "../../utils";
 import { SizeAndPosManager } from "./SizeAndPosManager";
+import ScrollFlex from "./ScrollFlex.vue";
 import {
   DIRECTION_VERTICAL,
   DIRECTION_HORIZONTAL,
@@ -96,17 +98,21 @@ export default defineComponent({
     },
     width: {},
   },
+  components: {
+    ScrollFlex,
+  },
   setup(props) {
     let rootNode = ref(null);
     let innerNode = ref(null);
     let warpStyle = ref(null);
     let innerStyle = ref(null);
-    let items = ref(null);
+    let items: any = ref(null);
 
     let offset: number;
     let styleCache: StyleCache = {};
     let visableItems: any[] = reactive([]); // 显示的元素
     let sizeAndPosManager: SizeAndPosManager; // 位置管理模块
+    let startIndex: any = ref(0);
     let _positionData = computed(() => {
       return props.data.map((item, index) => {
         return {
@@ -151,7 +157,7 @@ export default defineComponent({
           itemSizeGetter: (index) => getSize(index),
           estimatedItemSize: getEstimatedItemSize(),
         });
-
+      sizeAndPosManager.initCachedPositions();
       return sizeAndPosManager;
     };
     const getEstimatedItemSize = () => {
@@ -162,7 +168,7 @@ export default defineComponent({
       );
     };
     const initScroll = () => {
-      createSizeAndPosManager(); // 先初始化位置和数量
+      createSizeAndPosManager(); // 先初始化预估的位置和数量
       addEventListener(rootNode.value as any, "scroll", handleScroll);
       // offset =
       //   props.scrollOffset ||
@@ -193,10 +199,17 @@ export default defineComponent({
         width: props.width,
       };
       // 自适应高度的情况下，innerStyle应该为绝对定位，内部子元素相对定位，并高度自由撑开，给定的预估高度为min-height
-      innerStyle.value = {
-        ...(modelFlag ? STYLE_INNER_FLEX : STYLE_INNER),
-        [getCurrSizeProp()]: sizeAndPosManager.getTotalSize() + "px",
-      };
+      if (modelFlag) {
+        innerStyle.value = {
+          ...STYLE_INNER_FLEX,
+          [getCurrSizeProp()]: sizeAndPosManager.getTotalSize() + "px",
+        };
+      } else {
+        innerStyle.value = {
+          ...STYLE_INNER,
+          [getCurrSizeProp()]: sizeAndPosManager.getTotalSize() + "px",
+        };
+      }
     };
     const getItemStyle = (index: number): any => {
       index += event.start;
@@ -212,41 +225,88 @@ export default defineComponent({
         [(positionProp as any)[props.scrollDirection]]: offset + "px",
       });
     };
+    const getTransform = () => {
+      return `translate3d(0,${
+        startIndex >= 1
+          ? sizeAndPosManager.cachedPositions[startIndex - 1].bottom
+          : 0
+      }px,0)`;
+    };
     const scrollRender = () => {
       const { start, stop } = sizeAndPosManager.getVisibleRange({
         containerSize: getCurrSizeVal() || 0,
         offset: offset || 0,
         overscanCount: props.overscanCount,
       });
+      console.log(start, stop, offset,'+++++++++++++');
+
       if (typeof start !== "undefined" && typeof stop !== "undefined") {
         visableItems.length = 0;
 
         for (let i = start; i <= stop; i++) {
           visableItems.push(_positionData.value[i]);
         }
-
         event.start = start;
         event.stop = stop;
         event.offset = offset;
         event.items = visableItems;
         event.total = getItemCount();
-
-        // if (!util.isPureNumber(itemSize.value)) {
-        //   innerStyle.value = {
-        //     ...STYLE_INNER,
-        //     [getCurrSizeProp()]: addUnit(sizeAndPosManager.getTotalSize()),
-        //   };
-        // }
       }
     };
     onMounted(() => setTimeout(initScroll));
     onUpdated(() => {
-      console.log(items.value);
-      (items.value as any).forEach((element: HTMLElement) => {
-        let rect = element.getBoundingClientRect();
-        console.log(rect.height);
-        
+      if (!modelFlag.value) return;
+      let start: any = null;
+      (items.value as any).forEach((node: HTMLDivElement) => {
+        if (!node) {
+          return;
+        }
+        const rect = node.getBoundingClientRect();
+        const { height } = rect;
+        const index = Number(node.id.split("-")[1]);
+        const oldHeight = sizeAndPosManager.cachedPositions[index].height;
+        const dValue = oldHeight - height;
+        if (dValue) {
+          sizeAndPosManager.cachedPositions[index].bottom -= dValue;
+          sizeAndPosManager.cachedPositions[index].height = height;
+          sizeAndPosManager.cachedPositions[index].dValue = dValue;
+          for (
+            let k = index + 1;
+            k < sizeAndPosManager.cachedPositions.length;
+            k++
+          ) {
+            sizeAndPosManager.cachedPositions[k].top =
+              sizeAndPosManager.cachedPositions[k - 1].bottom;
+            sizeAndPosManager.cachedPositions[k].bottom =
+              sizeAndPosManager.cachedPositions[k].bottom - dValue;
+          }
+        }
+        // let startIdx = 0;
+
+        // if (start) {
+        //   startIdx = Number(start.id.split("-")[1]);
+        // }
+        // const cachedPositionsLen = sizeAndPosManager.cachedPositions.length;
+        // let cumulativeDiffHeight =
+        //   sizeAndPosManager.cachedPositions[startIdx].dValue;
+        // sizeAndPosManager.cachedPositions[startIdx].dValue = 0;
+
+        // for (let i = startIdx + 1; i < cachedPositionsLen; ++i) {
+        //   const item = sizeAndPosManager.cachedPositions[i];
+        //   sizeAndPosManager.cachedPositions[i].top =
+        //     sizeAndPosManager.cachedPositions[i - 1].bottom;
+        //   sizeAndPosManager.cachedPositions[i].bottom =
+        //     sizeAndPosManager.cachedPositions[i].bottom - cumulativeDiffHeight;
+        //   if (item.dValue !== 0) {
+        //     cumulativeDiffHeight += item.dValue;
+        //     item.dValue = 0;
+        //   }
+        // }
+        // const totallHeight =
+        //   sizeAndPosManager.cachedPositions[cachedPositionsLen - 1].bottom;
+        // (innerNode.value as any).style.height = `${totallHeight}px`;
       });
+      console.log(sizeAndPosManager.cachedPositions);
     });
     // watch(
     //   () => props.data,
@@ -274,3 +334,8 @@ export default defineComponent({
   },
 });
 </script>
+<style lang="scss" scoped>
+.actualContent .vue3-infinite-list {
+  border-bottom: 1px solid #999;
+}
+</style>

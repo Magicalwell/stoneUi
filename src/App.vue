@@ -5,6 +5,7 @@
     :width="'100%'"
     :height="500"
     :itemSize="50"
+    :estimatedItemSize="50"
     v-slot="{ item }"
   >
     <div>{{ item.title}}</div>

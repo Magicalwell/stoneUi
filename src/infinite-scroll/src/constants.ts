@@ -45,8 +45,8 @@ export const STYLE_INNER: any = {
 export const STYLE_ITEM: any = {
   position: "absolute",
   left: 0,
-  width: "100%",
-  height: "100%",
+  right: 0,
+  top: 0,
 };
 export const STYLE_INNER_FLEX: any = {
   position: "absolute",
