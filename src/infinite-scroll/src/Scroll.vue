@@ -13,13 +13,13 @@
     </div>
     <div v-else class="actualContent" :style="innerStyle" ref="innerNode">
       <div
-        v-for="(item, i) in event?.items"
-        :key="i"
-        :id="'item-' + i"
-        class="vue3-infinite-list"
+        class="infinite-list-item"
         ref="items"
+        :id="item._id"
+        :key="item._id"
+        v-for="item in visibleData"
       >
-        <slot :event="event" :item="item.item" :index="i"></slot>
+        <slot ref="slot" :item="item.item"></slot>
       </div>
     </div>
   </div>
@@ -33,7 +33,7 @@ import {
   toRefs,
   reactive,
   computed,
-  watch,
+  nextTick,
 } from "vue";
 import { addEventListener } from "../../utils";
 import { SizeAndPosManager } from "./SizeAndPosManager";
@@ -113,6 +113,7 @@ export default defineComponent({
     let visableItems: any[] = reactive([]); // 显示的元素
     let sizeAndPosManager: SizeAndPosManager; // 位置管理模块
     let startIndex: any = ref(0);
+    let endIndex: any = ref(0);
     let _positionData = computed(() => {
       return props.data.map((item, index) => {
         return {
@@ -121,6 +122,18 @@ export default defineComponent({
         };
       });
     }); // 存放处理后的数据，需要跟之前的隔离以免影响到
+    let visibleData = computed(() => {
+      let start = startIndex.value - props.overscanCount;
+      let end = endIndex.value + props.overscanCount;
+      return _positionData.value.slice(start, end);
+    });
+    let positions: any;
+    positions = props.data.map((d, index) => ({
+      index,
+      height: props.estimatedItemSize,
+      top: index * props.estimatedItemSize,
+      bottom: (index + 1) * props.estimatedItemSize,
+    }));
     // 为true则是自适应模式
     let modelFlag = computed(
       () =>
@@ -238,7 +251,7 @@ export default defineComponent({
         offset: offset || 0,
         overscanCount: props.overscanCount,
       });
-      console.log(start, stop, offset,'+++++++++++++');
+      console.log(start, stop, offset, "+++++++++++++");
 
       if (typeof start !== "undefined" && typeof stop !== "undefined") {
         visableItems.length = 0;
@@ -256,57 +269,60 @@ export default defineComponent({
     onMounted(() => setTimeout(initScroll));
     onUpdated(() => {
       if (!modelFlag.value) return;
-      let start: any = null;
-      (items.value as any).forEach((node: HTMLDivElement) => {
-        if (!node) {
+      nextTick(() => {
+        if (!items.value || !items.value.length) {
           return;
         }
-        const rect = node.getBoundingClientRect();
-        const { height } = rect;
-        const index = Number(node.id.split("-")[1]);
-        const oldHeight = sizeAndPosManager.cachedPositions[index].height;
-        const dValue = oldHeight - height;
-        if (dValue) {
-          sizeAndPosManager.cachedPositions[index].bottom -= dValue;
-          sizeAndPosManager.cachedPositions[index].height = height;
-          sizeAndPosManager.cachedPositions[index].dValue = dValue;
-          for (
-            let k = index + 1;
-            k < sizeAndPosManager.cachedPositions.length;
-            k++
-          ) {
-            sizeAndPosManager.cachedPositions[k].top =
-              sizeAndPosManager.cachedPositions[k - 1].bottom;
-            sizeAndPosManager.cachedPositions[k].bottom =
-              sizeAndPosManager.cachedPositions[k].bottom - dValue;
+        //获取真实元素大小，修改对应的尺寸缓存
+        items.value.forEach((node: any) => {
+          let rect = node.getBoundingClientRect();
+          let height = rect.height;
+          let index = +node.id.slice(1);
+          let oldHeight = positions[index].height;
+          let dValue = oldHeight - height;
+          //存在差值
+          if (dValue) {
+            positions[index].bottom = positions[index].bottom - dValue;
+            positions[index].height = height;
+            for (let k = index + 1; k < positions.length; k++) {
+              positions[k].top = positions[k - 1].bottom;
+              positions[k].bottom = positions[k].bottom - dValue;
+            }
           }
-        }
-        // let startIdx = 0;
-
-        // if (start) {
-        //   startIdx = Number(start.id.split("-")[1]);
-        // }
-        // const cachedPositionsLen = sizeAndPosManager.cachedPositions.length;
-        // let cumulativeDiffHeight =
-        //   sizeAndPosManager.cachedPositions[startIdx].dValue;
-        // sizeAndPosManager.cachedPositions[startIdx].dValue = 0;
-
-        // for (let i = startIdx + 1; i < cachedPositionsLen; ++i) {
-        //   const item = sizeAndPosManager.cachedPositions[i];
-        //   sizeAndPosManager.cachedPositions[i].top =
-        //     sizeAndPosManager.cachedPositions[i - 1].bottom;
-        //   sizeAndPosManager.cachedPositions[i].bottom =
-        //     sizeAndPosManager.cachedPositions[i].bottom - cumulativeDiffHeight;
-        //   if (item.dValue !== 0) {
-        //     cumulativeDiffHeight += item.dValue;
-        //     item.dValue = 0;
-        //   }
-        // }
-        // const totallHeight =
-        //   sizeAndPosManager.cachedPositions[cachedPositionsLen - 1].bottom;
-        // (innerNode.value as any).style.height = `${totallHeight}px`;
+        });
+        //更新列表总高度
+        let height = positions[positions.length - 1].bottom;
+        // this.$refs.phantom.style.height = height + "px";
+        //更新真实偏移量
+        // this.setStartOffset();
       });
-      console.log(sizeAndPosManager.cachedPositions);
+      // let start: any = null;
+      // (items.value as any).forEach((node: HTMLDivElement) => {
+      //   if (!node) {
+      //     return;
+      //   }
+      //   const rect = node.getBoundingClientRect();
+      //   const { height } = rect;
+      //   const index = Number(node.id.split("-")[1]);
+      //   const oldHeight = sizeAndPosManager.cachedPositions[index].height;
+      //   const dValue = oldHeight - height;
+      //   if (dValue) {
+      //     sizeAndPosManager.cachedPositions[index].bottom -= dValue;
+      //     sizeAndPosManager.cachedPositions[index].height = height;
+      //     sizeAndPosManager.cachedPositions[index].dValue = dValue;
+      //     for (
+      //       let k = index + 1;
+      //       k < sizeAndPosManager.cachedPositions.length;
+      //       k++
+      //     ) {
+      //       sizeAndPosManager.cachedPositions[k].top =
+      //         sizeAndPosManager.cachedPositions[k - 1].bottom;
+      //       sizeAndPosManager.cachedPositions[k].bottom =
+      //         sizeAndPosManager.cachedPositions[k].bottom - dValue;
+      //     }
+      //   }
+      // });
+      // console.log(sizeAndPosManager.cachedPositions);
     });
     // watch(
     //   () => props.data,
@@ -330,6 +346,7 @@ export default defineComponent({
       getItemStyle,
       items,
       modelFlag,
+      visibleData,
     };
   },
 });
