@@ -6,9 +6,12 @@
     :height="500"
     :itemSize="50"
     :estimatedItemSize="50"
-    v-slot="{ item }"
+    v-slot="{ item, index }"
   >
-    <div>{{ item.title}}</div>
+    <div>
+      <span style="color: red">{{ index }}</span
+      >{{ item.msg }}
+    </div>
   </STInfiniteScroll>
 </template>
 

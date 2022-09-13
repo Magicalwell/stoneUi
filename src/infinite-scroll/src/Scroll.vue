@@ -17,9 +17,9 @@
         ref="items"
         :id="item._id"
         :key="item._id"
-        v-for="item in visibleData"
+        v-for="(item, index) in visibleData"
       >
-        <slot ref="slot" :item="item.item"></slot>
+        <slot ref="slot" :item="item.item" :index="index"></slot>
       </div>
     </div>
   </div>
@@ -113,7 +113,7 @@ export default defineComponent({
     let visableItems: any[] = reactive([]); // 显示的元素
     let sizeAndPosManager: SizeAndPosManager; // 位置管理模块
     let startIndex: any = ref(0);
-    let endIndex: any = ref(0);
+    let endIndex: any = ref(6);
     let _positionData = computed(() => {
       return props.data.map((item, index) => {
         return {
@@ -123,7 +123,10 @@ export default defineComponent({
       });
     }); // 存放处理后的数据，需要跟之前的隔离以免影响到
     let visibleData = computed(() => {
-      let start = startIndex.value - props.overscanCount;
+      let start =
+        startIndex.value - props.overscanCount < 0
+          ? 0
+          : startIndex.value - props.overscanCount;
       let end = endIndex.value + props.overscanCount;
       return _positionData.value.slice(start, end);
     });
@@ -192,17 +195,27 @@ export default defineComponent({
       scrollRender();
     };
     const handleScroll = (e: UIEvent) => {
-      const nodeOffset = getNodeOffset();
-      if (
-        nodeOffset < 0 ||
-        offset === nodeOffset ||
-        e.target !== rootNode.value
-      )
-        return;
+      //当前滚动位置
+      let scrollTop = (rootNode.value as any).scrollTop;
+      // let startBottom = this.positions[this.start - ]
+      //此时的开始索引
+      startIndex.value = getStartIndex(scrollTop);
+      //此时的结束索引
+      endIndex.value = startIndex.value + 6;
+      //此时的偏移量
+      setStartOffset();
 
-      offset = nodeOffset;
+      // const nodeOffset = getNodeOffset();
+      // if (
+      //   nodeOffset < 0 ||
+      //   offset === nodeOffset ||
+      //   e.target !== rootNode.value
+      // )
+      //   return;
 
-      scrollRender();
+      // offset = nodeOffset;
+
+      // scrollRender();
     };
     const setDomStyle = () => {
       // 常规定高模式下，内部相对定位，通过计算给出总高以模拟出滚动条，当发生滚动的时候，内部盒子正常滚动，只不过程序控制的是里面绝对定位item的渲染
@@ -266,77 +279,109 @@ export default defineComponent({
         event.total = getItemCount();
       }
     };
+    const updateItemsSize = () => {
+      if (!items.value || !items.value.length) {
+        return;
+      }
+      items.value.forEach((node: any) => {
+        let rect = node.getBoundingClientRect();
+        let height = rect.height;
+        let index = +node.id.slice(1);
+        let oldHeight = positions[index].height;
+        let dValue = oldHeight - height;
+        //存在差值
+        if (dValue) {
+          positions[index].bottom = positions[index].bottom - dValue;
+          positions[index].height = height;
+          for (let k = index + 1; k < positions.length; k++) {
+            positions[k].top = positions[k - 1].bottom;
+            positions[k].bottom = positions[k].bottom - dValue;
+          }
+        }
+      });
+    };
+    const getStartIndex = (scrollTop = 0) => {
+      //二分法查找
+      return binarySearch(positions, scrollTop);
+    };
+    const binarySearch = (list: any, value: number) => {
+      let start = 0;
+      let end = list.length - 1;
+      let tempIndex = null;
+
+      while (start <= end) {
+        let midIndex = Math.floor((start + end) / 2);
+        let midValue = list[midIndex].bottom;
+        if (midValue === value) {
+          return midIndex + 1;
+        } else if (midValue < value) {
+          start = midIndex + 1;
+        } else if (midValue > value) {
+          if (tempIndex === null || tempIndex > midIndex) {
+            tempIndex = midIndex;
+          }
+          end = end - 1;
+        }
+      }
+      return tempIndex;
+    };
+    const setStartOffset = () => {
+      let startOffset;
+      if (startIndex.value >= 1) {
+        let size =
+          positions[startIndex.value].top -
+          (positions[startIndex.value - 0]
+            ? positions[startIndex.value - 0].top
+            : 0);
+        startOffset = positions[startIndex.value - 0].bottom - size;
+      } else {
+        startOffset = 0;
+      }
+      (
+        innerNode.value as any
+      ).style.transform = `translate3d(0,${startOffset}px,0)`;
+    };
     onMounted(() => setTimeout(initScroll));
     onUpdated(() => {
       if (!modelFlag.value) return;
-      nextTick(() => {
-        if (!items.value || !items.value.length) {
-          return;
-        }
+      nextTick(function () {
         //获取真实元素大小，修改对应的尺寸缓存
-        items.value.forEach((node: any) => {
-          let rect = node.getBoundingClientRect();
-          let height = rect.height;
-          let index = +node.id.slice(1);
-          let oldHeight = positions[index].height;
-          let dValue = oldHeight - height;
-          //存在差值
-          if (dValue) {
-            positions[index].bottom = positions[index].bottom - dValue;
-            positions[index].height = height;
-            for (let k = index + 1; k < positions.length; k++) {
-              positions[k].top = positions[k - 1].bottom;
-              positions[k].bottom = positions[k].bottom - dValue;
-            }
-          }
-        });
+        updateItemsSize();
         //更新列表总高度
         let height = positions[positions.length - 1].bottom;
         // this.$refs.phantom.style.height = height + "px";
         //更新真实偏移量
-        // this.setStartOffset();
+        setStartOffset();
       });
-      // let start: any = null;
-      // (items.value as any).forEach((node: HTMLDivElement) => {
-      //   if (!node) {
+      // nextTick(() => {
+      //   if (!items.value || !items.value.length) {
       //     return;
       //   }
-      //   const rect = node.getBoundingClientRect();
-      //   const { height } = rect;
-      //   const index = Number(node.id.split("-")[1]);
-      //   const oldHeight = sizeAndPosManager.cachedPositions[index].height;
-      //   const dValue = oldHeight - height;
-      //   if (dValue) {
-      //     sizeAndPosManager.cachedPositions[index].bottom -= dValue;
-      //     sizeAndPosManager.cachedPositions[index].height = height;
-      //     sizeAndPosManager.cachedPositions[index].dValue = dValue;
-      //     for (
-      //       let k = index + 1;
-      //       k < sizeAndPosManager.cachedPositions.length;
-      //       k++
-      //     ) {
-      //       sizeAndPosManager.cachedPositions[k].top =
-      //         sizeAndPosManager.cachedPositions[k - 1].bottom;
-      //       sizeAndPosManager.cachedPositions[k].bottom =
-      //         sizeAndPosManager.cachedPositions[k].bottom - dValue;
+      //   //获取真实元素大小，修改对应的尺寸缓存
+      //   items.value.forEach((node: any) => {
+      //     let rect = node.getBoundingClientRect();
+      //     let height = rect.height;
+      //     let index = +node.id.slice(1);
+      //     let oldHeight = positions[index].height;
+      //     let dValue = oldHeight - height;
+      //     //存在差值
+      //     if (dValue) {
+      //       positions[index].bottom = positions[index].bottom - dValue;
+      //       positions[index].height = height;
+      //       for (let k = index + 1; k < positions.length; k++) {
+      //         positions[k].top = positions[k - 1].bottom;
+      //         positions[k].bottom = positions[k].bottom - dValue;
+      //       }
       //     }
-      //   }
+      //   });
+      //   //更新列表总高度
+      //   let height = positions[positions.length - 1].bottom;
+      //   // this.$refs.phantom.style.height = height + "px";
+      //   //更新真实偏移量
+      //   // this.setStartOffset();
       // });
-      // console.log(sizeAndPosManager.cachedPositions);
     });
-    // watch(
-    //   () => props.data,
-    //   (newVal, oldVal) => {
-    //     sizeAndPosManager.updateConfig({
-    //       itemCount: getItemCount(),
-    //       estimatedItemSize: getEstimatedItemSize(),
-    //     });
-    //     oldOffset = null;
-    //     recomputeSizes();
-    //     setDomStyle();
-    //     setTimeout(scrollRender, 0);
-    //   }
-    // );
+
     return {
       rootNode,
       innerNode,
